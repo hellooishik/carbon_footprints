@@ -7,6 +7,7 @@
 #include <set>
 #include <cstdlib>
 #include <iomanip>
+#include <cmath>
 #include <curl/curl.h>
 
 struct EmissionData {
@@ -96,7 +97,7 @@ void displayCountries(const std::set<std::string>& countries) {
     std::cout << "\n";
 }
 
-void generateReport(const std::string& country, const std::vector<EmissionData>& emissions, double average, double max_emission, const std::string& max_year, double min_emission, const std::string& min_year) {
+void generateReport(const std::string& country, const std::vector<EmissionData>& emissions, double average, double stddev, double max_emission, const std::string& max_year, double min_emission, const std::string& min_year) {
     std::ofstream report(report_file);
     if (!report.is_open()) {
         std::cerr << "Error: Unable to create report file.\n";
@@ -113,6 +114,7 @@ void generateReport(const std::string& country, const std::vector<EmissionData>&
 
     report << "\nStatistics for " << country << ":\n";
     report << "- Average Emissions: " << average << " Mt\n";
+    report << "- Standard Deviation: " << stddev << " Mt\n";
     report << "- Highest Emissions: " << max_emission << " Mt in " << max_year << "\n";
     report << "- Lowest Emissions: " << min_emission << " Mt in " << min_year << "\n";
 
@@ -147,12 +149,19 @@ void analyzeCountry(const std::string& country, const std::map<std::string, std:
     }
 
     double average = total / emissions.size();
+    double variance = 0;
+    for (const auto& record : emissions) {
+        variance += std::pow(record.emissions - average, 2);
+    }
+    double stddev = std::sqrt(variance / emissions.size());
+
     std::cout << "\nStatistics for " << country << ":\n";
     std::cout << "- Average Emissions: " << average << " Mt\n";
+    std::cout << "- Standard Deviation: " << stddev << " Mt\n";
     std::cout << "- Highest Emissions: " << max_emission << " Mt in " << max_year << "\n";
     std::cout << "- Lowest Emissions: " << min_emission << " Mt in " << min_year << "\n";
 
-    generateReport(country, emissions, average, max_emission, max_year, min_emission, min_year);
+    generateReport(country, emissions, average, stddev, max_emission, max_year, min_emission, min_year);
 }
 
 int main() {
